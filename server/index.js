@@ -55,9 +55,9 @@ app.post('/api/upload', upload.single('image'), (req,res)=>{
 
   });
 
-  const query = "UPDATE orders SET dataImage=?,status=?  WHERE Id_Order=?"
+  const query = "UPDATE orders SET dataImage=?,status=?,batasorder=?  WHERE Id_Order=?"
 
-  db.query(query, [imagePath,"Sedang Diproses",Id_Order],(err,result) => {
+  db.query(query, [imagePath,"Sedang Diproses","",Id_Order],(err,result) => {
     if (err) {
       console.error('Error saving the image to the database:', err);
       return res.status(500).json({ error: 'Error saving the image to the database' });
@@ -86,15 +86,12 @@ app.get('/api/getData', (req, res) => {
   });
 });
 
-
 app.get("/cart", (req,res) =>{
     const sqlSelect = "SELECT * FROM cartdetail";
     db.query(sqlSelect, (err, result) =>{
         res.send(result);
     })
 })
-
-
 
 app.post("/removeOrder", (req,res) =>{
   const {Id_Order} = req.body;
@@ -139,7 +136,7 @@ app.post("/updateOrder", (req, res) => {
     const { Id_Order,Kurir,Resi,Notes,Ongkir,BatasOrder} = req.body;
     console.log(BatasOrder);
       sqlQuery = `UPDATE orders SET kurir="${Kurir}", noresi="${Resi}", status="${Notes}", ongkir=${Ongkir}, batasorder="${BatasOrder}"  WHERE Id_Order="${Id_Order}";`;
-  
+      console.log(sqlQuery);
       db.query(sqlQuery, (err, result) => {
         if (err) {
           console.error('Error submitting data:', err);
@@ -155,8 +152,7 @@ app.post("/updateOrder", (req, res) => {
         res.send(result);
       });
   });
-
-  
+ 
 app.get("/getId_Order", (req, res) => {
       sqlQuery = `SELECT * FROM orders;`;
 
@@ -175,6 +171,7 @@ app.get("/getId_Order", (req, res) => {
         res.send(result);
       });
   });
+
 app.get("/getOrder", (req, res) => {
       sqlQuery = `SELECT * FROM orderdetail ;`;
 
@@ -193,26 +190,27 @@ app.get("/getOrder", (req, res) => {
         res.send(result);
       });
   });
+
 app.post("/register", (req, res) => {
     const { Username, Password, Email, Notelp, Alamat } = req.body;
     const Id_User = `${Username.slice(0, 3)}${Math.floor(
       Math.random() * (99999 - 10000 + 1) + 10000
     )}`;
 
-      sqlQuery = `INSERT INTO user VALUES("${Id_User}","${Username}","${Password}","${Email}","${Notelp}","${Alamat}");`;
+      sqlQuery = `INSERT INTO user VALUES("${Id_User}","${Username}","${Password}","${Email}","${Notelp}","${Alamat}","user");`;
   
-      db.query(sqlQuery, (err) => {
+      db.query(sqlQuery, (err,result) => {
         if (err) {
           console.error('Error submitting data:', err);
           res.status(500).json({ message: `${err}` });
           return;
         }
   
-        res.status(200).json({ message: 'Data inserted successfully' });
+        res.send(result)
       });
   });
   
-  app.post("/getId_Cart", (req, res) => {
+app.post("/getId_Cart", (req, res) => {
     const {  Id_User} = req.body;
       sqlQuery = `SELECT Id_Cart FROM cart WHERE Id_User="${Id_User}";`;
   
@@ -229,7 +227,7 @@ app.post("/register", (req, res) => {
 app.post("/order", (req, res) => {
     const {Id_Order,Id_User,Id_Product, Qty, Ttl_Belanja} = req.body;
     const sqlQuery1 = `INSERT INTO orderdetail (Id_Order, Id_Product, Qty, Ttl_Belanja) VALUES("${Id_Order}","${Id_Product}",${Qty},${Ttl_Belanja});`;
-    const sqlQuery2 = `INSERT IGNORE INTO orders (Id_Order, Id_User,status,dataImage) VALUES("${Id_Order}","${Id_User}","Proses Ongkir","");`;
+    const sqlQuery2 = `INSERT IGNORE INTO orders (Id_Order, Id_User,status,dataImage,batasorder) VALUES("${Id_Order}","${Id_User}","Proses Ongkir","","");`;
     const sqlQuery3 = `DELETE FROM cart WHERE Id_User="${Id_User}"`;
     const sqlQuery4 = `DELETE FROM cartdetail WHERE Id_User="${Id_User}"`;
   
@@ -269,7 +267,6 @@ app.post("/order", (req, res) => {
       });
 });
 
-
 app.post("/user", (req, res) => {
     const { Username, Password} = req.body;
     sqlQuery = `SELECT * FROM user WHERE Username="${Username}" AND Password="${Password}";`;
@@ -289,6 +286,7 @@ app.post("/user", (req, res) => {
         res.send(result);
       });
   });
+
 app.post("/quantity", (req,res) =>{
     const {quantity, Id_User, Id_Produk} = req.body;
     const sqlUpdate = "UPDATE cartdetail SET Qty=? where Id_User=? AND Id_Product=?;";
@@ -330,7 +328,6 @@ app.post("/remover", (req,res) =>{
           }
     })
 })
-
 
 app.post("/checkout", (req,res) =>{
     const Id_Cart = req.body.Id_Cart;
